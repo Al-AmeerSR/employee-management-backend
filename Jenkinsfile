@@ -6,9 +6,6 @@ pipeline {
         DOCKER_TAG = "latest"
     }
 
-    triggers {
-        githubPullRequest() // triggers on PR merge (GitHub plugin required)
-    }
 
     stages {
 
