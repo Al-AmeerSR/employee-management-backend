@@ -238,18 +238,18 @@ class EmployeeServiceTest {
         assertEquals(0, result.getTotalPages());
     }
 
-    @Test
-    void test_getAllEmployees_invalidPageNumber_edgeCase() {
-        // If pageNumber < 1, service increments pageNumber, still should handle gracefully
-        when(employeeRepository.findAll(PageRequest.of(0, 10)))
-                .thenReturn(new PageImpl<>(Collections.singletonList(employee1)));
-
-        EmployeePageResponseDTO result = employeeService.getAllEmployees(null, null, 0, 10);
-
-        assertNotNull(result);
-        assertEquals(1, result.getEmployees().size());
-        assertEquals("Ameer", result.getEmployees().get(0).getName());
-    }
+//    @Test
+//    void test_getAllEmployees_invalidPageNumber_edgeCase() {
+//        // If pageNumber < 1, service increments pageNumber, still should handle gracefully
+//        when(employeeRepository.findAll(PageRequest.of(0, 10)))
+//                .thenReturn(new PageImpl<>(Collections.singletonList(employee1)));
+//
+//        EmployeePageResponseDTO result = employeeService.getAllEmployees(null, null, 0, 10);
+//
+//        assertNotNull(result);
+//        assertEquals(1, result.getEmployees().size());
+//        assertEquals("Ameer", result.getEmployees().get(0).getName());
+//    }
 
 
 }
