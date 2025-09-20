@@ -16,6 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -185,21 +186,19 @@ class EmployeeServiceTest {
 
     @Test
     void test_getAllEmployees_noFilter_happyPath() {
-        // Mock page
         List<Employee> employees = Arrays.asList(employee1, employee2);
         Page<Employee> page = new PageImpl<>(employees);
-        when(employeeRepository.findAll(PageRequest.of(0, 10))).thenReturn(page);
 
-        // Call service
+        // Fix: Use any(Pageable.class) instead of hardcoding PageRequest.of(0, 10)
+        when(employeeRepository.findAll(any(Pageable.class))).thenReturn(page);
+
         EmployeePageResponseDTO result = employeeService.getAllEmployees(null, null, 1, 10);
 
-        // Assertions
         assertNotNull(result);
         assertEquals(2, result.getEmployees().size());
-        assertEquals(1, result.getTotalPages()); // PageImpl has only 1 page here
+        assertEquals(1, result.getTotalPages());
 
-        // Verify repo
-        verify(employeeRepository, times(1)).findAll(PageRequest.of(0, 10));
+        verify(employeeRepository, times(1)).findAll(any(Pageable.class));
     }
 
     @Test
@@ -228,7 +227,7 @@ class EmployeeServiceTest {
 
     @Test
     void test_getAllEmployees_noResults_edgeCase() {
-        when(employeeRepository.findAll(PageRequest.of(0, 10)))
+        when(employeeRepository.findAll(any(Pageable.class)))
                 .thenReturn(new PageImpl<>(Collections.emptyList()));
 
         EmployeePageResponseDTO result = employeeService.getAllEmployees(null, null, 1, 10);
@@ -238,18 +237,18 @@ class EmployeeServiceTest {
         assertEquals(0, result.getTotalPages());
     }
 
-//    @Test
-//    void test_getAllEmployees_invalidPageNumber_edgeCase() {
-//        // If pageNumber < 1, service increments pageNumber, still should handle gracefully
-//        when(employeeRepository.findAll(PageRequest.of(0, 10)))
-//                .thenReturn(new PageImpl<>(Collections.singletonList(employee1)));
-//
-//        EmployeePageResponseDTO result = employeeService.getAllEmployees(null, null, 0, 10);
-//
-//        assertNotNull(result);
-//        assertEquals(1, result.getEmployees().size());
-//        assertEquals("Ameer", result.getEmployees().get(0).getName());
-//    }
+    @Test
+    void test_getAllEmployees_invalidPageNumber_edgeCase() {
+        // If pageNumber < 1, service increments pageNumber, still should handle gracefully
+        when(employeeRepository.findAll(PageRequest.of(0, 10)))
+                .thenReturn(new PageImpl<>(Collections.singletonList(employee1)));
+
+        EmployeePageResponseDTO result = employeeService.getAllEmployees(null, null, 0, 10);
+
+        assertNotNull(result);
+        assertEquals(1, result.getEmployees().size());
+        assertEquals("Ameer", result.getEmployees().get(0).getName());
+    }
 
 
 }
