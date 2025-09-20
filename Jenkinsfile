@@ -4,8 +4,8 @@ pipeline {
     environment {
         DOCKER_IMAGE = "ameersr1997/employee-management"
         DOCKER_TAG = "latest"
+        SONARQUBE = "MySonarQube" // Jenkins SonarQube configuration name
     }
-
 
     stages {
 
@@ -29,7 +29,17 @@ pipeline {
             }
             post {
                 always {
-                    junit '**/target/surefire-reports/*.xml' // publish test results
+                    junit '**/target/surefire-reports/*.xml'
+                }
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                script {
+                    withSonarQubeEnv("${SONARQUBE}") {
+                        bat "mvn sonar:sonar -Dsonar.projectKey=employee-management -Dsonar.host.url=${env.SONAR_HOST_URL} -Dsonar.login=${env.SONAR_AUTH_TOKEN}"
+                    }
                 }
             }
         }
