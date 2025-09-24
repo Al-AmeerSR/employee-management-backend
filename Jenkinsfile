@@ -20,18 +20,8 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Building the application using Maven...'
+                // Skipping tests here is optional; we run them in next stage
                 bat 'mvn clean package -DskipTests=false'
-            }
-            post {
-                success {
-                    echo "Sending build info to Jira..."
-                    jiraSendBuildInfo(
-                        site: 'iamameer37.atlassian.net',           // configured in Jenkins
-                        buildName: "Employee Management Build",
-                        buildNumber: env.BUILD_NUMBER,
-                        projectKey: 'EMP'            // replace with your Jira project key
-                    )
-                }
             }
         }
 
@@ -43,6 +33,7 @@ pipeline {
             }
             post {
                 always {
+                    // Publish test reports
                     junit '**/target/surefire-reports/*.xml'
                 }
             }
@@ -53,14 +44,8 @@ pipeline {
             steps {
                 script {
                     withSonarQubeEnv("${SONARQUBE}") {
-                        bat """
-                            mvn sonar:sonar \
-                            -Dsonar.projectKey=employee-management \
-                            -Dsonar.host.url=${env.SONAR_HOST_URL} \
-                            -Dsonar.login=${env.SONAR_AUTH_TOKEN} \
-                            -Dsonar.java.coveragePlugin=jacoco \
-                            -Dsonar.coverage.jacoco.xmlReportPaths=target/jacoco/jacoco.xml
-                        """
+                        // Run SonarQube analysis
+                        bat "mvn sonar:sonar -Dsonar.projectKey=employee-management -Dsonar.host.url=${env.SONAR_HOST_URL} -Dsonar.login=${env.SONAR_AUTH_TOKEN} -Dsonar.java.coveragePlugin=jacoco -Dsonar.coverage.jacoco.xmlReportPaths=target/jacoco/jacoco.xml"
                     }
                 }
             }
@@ -69,6 +54,7 @@ pipeline {
         // -----------------------------
         stage('Quality Gate') {
             steps {
+                // Fail the pipeline if quality gate fails
                 timeout(time: 5, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: true
                 }
@@ -94,32 +80,6 @@ pipeline {
                         def appImage = docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
                         appImage.push()
                     }
-                }
-            }
-            post {
-                success {
-                    echo "Sending deployment info to Jira..."
-                    jiraSendDeploymentInfo(
-                        site: 'iamameer37.atlassian.net',
-                        environmentId: 'prod',
-                        environmentName: 'Production',
-                        pipelineId: env.BUILD_ID,
-                        url: env.BUILD_URL,
-                        lastUpdated: new Date().format("yyyy-MM-dd'T'HH:mm:ss.SSSZ"),
-                        state: 'successful'
-                    )
-                }
-                failure {
-                    echo "Sending failed deployment info to Jira..."
-                    jiraSendDeploymentInfo(
-                        site: 'iamameer37.atlassian.net',
-                        environmentId: 'prod',
-                        environmentName: 'Production',
-                        pipelineId: env.BUILD_ID,
-                        url: env.BUILD_URL,
-                        lastUpdated: new Date().format("yyyy-MM-dd'T'HH:mm:ss.SSSZ"),
-                        state: 'failed'
-                    )
                 }
             }
         }
